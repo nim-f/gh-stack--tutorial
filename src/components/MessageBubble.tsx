@@ -8,6 +8,16 @@ interface MessageBubbleProps {
   name?: string
 }
 
+function getInitials(name?: string): string {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  const initials = parts
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() ?? '')
+    .join('')
+  return initials || '?'
+}
+
 export function MessageBubble({ message, sender, timestamp, avatar, name }: MessageBubbleProps) {
   const isUser = sender === 'user'
 
@@ -18,7 +28,7 @@ export function MessageBubble({ message, sender, timestamp, avatar, name }: Mess
           {avatar ? (
             <img src={avatar} alt={name ?? 'User'} />
           ) : (
-            <span>{name?.[0]?.toUpperCase() ?? '?'}</span>
+            <span>{getInitials(name)}</span>
           )}
         </div>
       )}
