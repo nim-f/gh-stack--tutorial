@@ -12,12 +12,14 @@ export interface Message {
 interface UseMessagesOptions {
   fetchUrl: string
   sendUrl: string
+  onSendError?: (message: string) => void
 }
 
 interface UseMessagesResult {
   messages: Message[]
   loading: boolean
   error: string | null
+  sending: boolean
   fetchMessages: () => Promise<void>
   sendMessage: (text: string) => Promise<void>
 }
@@ -26,10 +28,15 @@ function formatTimestamp(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-export function useMessages({ fetchUrl, sendUrl }: UseMessagesOptions): UseMessagesResult {
+export function useMessages({
+  fetchUrl,
+  sendUrl,
+  onSendError,
+}: UseMessagesOptions): UseMessagesResult {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
 
   const fetchMessages = useCallback(async () => {
     setLoading(true)
@@ -55,6 +62,7 @@ export function useMessages({ fetchUrl, sendUrl }: UseMessagesOptions): UseMessa
     }
 
     setMessages(prev => [...prev, optimistic])
+    setSending(true)
 
     try {
       const res = await fetch(sendUrl, {
@@ -67,9 +75,13 @@ export function useMessages({ fetchUrl, sendUrl }: UseMessagesOptions): UseMessa
       setMessages(prev => prev.map(m => (m.id === optimistic.id ? saved : m)))
     } catch (err) {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id))
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
+      onSendError?.(message)
+    } finally {
+      setSending(false)
     }
-  }, [sendUrl])
+  }, [sendUrl, onSendError])
 
-  return { messages, loading, error, fetchMessages, sendMessage }
+  return { messages, loading, error, sending, fetchMessages, sendMessage }
 }
