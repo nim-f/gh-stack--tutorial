@@ -18,6 +18,7 @@ interface UseMessagesResult {
   messages: Message[]
   loading: boolean
   error: string | null
+  clearError: () => void
   fetchMessages: () => Promise<void>
   sendMessage: (text: string) => Promise<void>
 }
@@ -71,5 +72,7 @@ export function useMessages({ fetchUrl, sendUrl }: UseMessagesOptions): UseMessa
     }
   }, [sendUrl])
 
-  return { messages, loading, error, fetchMessages, sendMessage }
+  const clearError = useCallback(() => setError(null), [])
+
+  return { messages, loading, error, clearError, fetchMessages, sendMessage }
 }
